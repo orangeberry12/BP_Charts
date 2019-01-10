@@ -19,7 +19,7 @@ def convertToUTC(TS):
 		naive_dt = datetime.strptime(t, '%d/%m/%Y %H:%M:%S.%f')
 		tz = pytz.timezone('US/Eastern')
 		eastern_dt = tz.normalize(tz.localize(naive_dt))
-		#print(eastern_dt)
+		##print(eastern_dt)
 		timestamp = (eastern_dt - datetime(1970, 1, 1, tzinfo=pytz.utc)).total_seconds()
 		utcTime.append(timestamp)
 	return utcTime
@@ -59,13 +59,14 @@ def getTime(tags):
 		currentTime = day + "/" + month + "/" + year + \
 				" " + hour + ":" + minute + ":" + second
 
-		#print("current time is: " + currentTime)
+		##print("current time is: " + currentTime)
 		timeStamps.append(currentTime)
 
 	return timeStamps
 
 
 def openReadFile(filepath):
+	print(filepath)
 	"""Opens .csv file and returns data in 2D array: [row][column]"""
 	dataArray = []
 	y = [] #E4
@@ -78,14 +79,14 @@ def openReadFile(filepath):
 	return dataArray
 
 
-def getSummaryFile(subject,folder):
+def getSummaryFile(dir,subject,folder):
 	import glob, os
 	#get current working directory
 	startPath = os.getcwd()
 
-	fileName = "./"+subject+"/"+folder+"/"
+	fileName = dir+subject+"/"+folder+"/"
 	#change directory to find summary file.
-	os.chdir("./" + subject + "/" + folder)
+	os.chdir(dir + subject + "/" + folder)
 	for file in glob.glob("*Summary.csv"): # find the summary file
 		fileName += file
 
@@ -94,9 +95,9 @@ def getSummaryFile(subject,folder):
 	return fileName
 
 
-def openReadBPFile(subject, folder):
+def openReadBPFile(dir,subject, folder):
 	"""Opens biopatch file """
-	filepath = getSummaryFile(subject,folder)
+	filepath = getSummaryFile(dir,subject,folder)
 
 	dataArray = []
 	y = [] #E4
@@ -178,8 +179,8 @@ def getMinMax(data):
 
 
 def cleanOutliers(x,y):
-	print("Now in cleanOutliers")
-	#print(x)
+	#print("Now in cleanOutliers")
+	##print(x)
 	avg = getAverage(y)
 	sigma = standardDeviation(y)
 	allowRange = 2*sigma #allowable deviation from average
@@ -204,7 +205,7 @@ def cleanConfidence(time, data, conf):
 			newTime.append(time[i])
 			newData.append(float(data[i]))
 
-	print("the clean confidence data is length: " + str(len(newTime)))
+	#print("the clean confidence data is length: " + str(len(newTime)))
 	
 	return [newTime, newData]
 
@@ -228,14 +229,14 @@ def cleanSessions(data):
 	"""
 	Takes data from separateData
 	"""
-	print("starting CleanSessions")
+	#print("starting CleanSessions")
 	cleanData = []
 	minY =0
 	maxY =0
 	for i in range(0,len(data)-3,2):
-		print("i is: " +str(i))
-		print(len(data[i]))
-		print(len(data[i+1]))
+		#print("i is: " +str(i))
+		#print(len(data[i]))
+		#print(len(data[i+1]))
 
 		temp = cleanOutliers(data[i],data[i+1])
 		cleanData.append(temp[0])
@@ -249,8 +250,8 @@ def cleanSessions(data):
 				minY = min(data[i+1])
 			if (max(data[i+1])>maxY):
 				maxY = max(data[i+1])
-		print("maxY is: " + str(maxY))
-		print("minY is: " +str(minY))
+		#print("maxY is: " + str(maxY))
+		#print("minY is: " +str(minY))
 	
 	cleanData.append(minY)
 	cleanData.append(maxY)
@@ -268,12 +269,12 @@ def separateData(data,tagdata):
 	tags=[]
 	for i in range(len(tagdata)):
 		tags.append(float(tagdata[i][0]))
-	print(tags)
+	#print(tags)
 
 
 	#convert timestamps in biopatch data to utc
 	times = convertToUTC(data[0])
-	#print(times)
+	##print(times)
 	temp = data[1]
 
 	#initialize x and y arrays
@@ -290,23 +291,23 @@ def separateData(data,tagdata):
 	current = 0		#counter to keep track of position in time
 
 	for t in range(6):
-		print("t is: " + str(t))
+		#print("t is: " + str(t))
 		for s in range(current, len(times)):
 			#x.append(s)		#populating x values
 			#find all the index to separate data
 			if (times[s]>tags[t]):
-				print("found one!")
+				#print("found one!")
 				divIndex.append(s)
 				current = s
 				break
 			elif (s == len(times)-1) and (t==5):
 				divIndex.append(s)
 
-	print(divIndex)
+	#print(divIndex)
 	#Check to make sure they aren't screwed up.
 	for p in range(len(divIndex)-1):
 		if (divIndex[p+1]-divIndex[p]<30):
-			print("divIndex too close together. Bad Data. SKIPPING")
+			#print("divIndex too close together. Bad Data. SKIPPING")
 			return "SKIPPED"
 
 
@@ -320,7 +321,7 @@ def separateData(data,tagdata):
 		testX = x[divIndex[4]:divIndex[5]]
 		testY = y[divIndex[4]:divIndex[5]]
 
-		print("relaxX is length: " +str(len(relaxX)))
+		#print("relaxX is length: " +str(len(relaxX)))
 
 		#transition periods
 		trans1X = x[divIndex[1]:divIndex[2]]
@@ -330,14 +331,14 @@ def separateData(data,tagdata):
 
 		minY = min(y)
 		maxY = max(y)
-		print("minY is: " + str(minY))
-		print("maxY is: " +str(maxY))
+		#print("minY is: " + str(minY))
+		#print("maxY is: " +str(maxY))
 
-		#print(relaxX)
+		##print(relaxX)
 
 		return [relaxX,relaxY, trans1X, trans1Y, habitX,habitY, trans2X, trans2Y, testX,testY, minY, maxY]
 	else:
-		print("Not enough good data. SKIPPING")
+		#print("Not enough good data. SKIPPING")
 		return "SKIPPED"
 
 
@@ -355,23 +356,23 @@ def rescaleData (data,datatype):
 
 	minY = data[len(data)-2]
 	maxY = data[len(data)-1]
-	print("minY is in rescale is: " + str(minY))
-	print("maxY is in rescale is: " + str(maxY))
+	#print("minY is in rescale is: " + str(minY))
+	#print("maxY is in rescale is: " + str(maxY))
 
 	for i in range(0,len(data)-2,2):		# remap x values
-		#print("i is: " + str(i))
-		#print("length data[i] is: " +str(len(data[i])))
+		##print("i is: " + str(i))
+		##print("length data[i] is: " +str(len(data[i])))
 		dL = len(data[i])-1 # last item in list
-		print("dL is: " + str(dL))
+		#print("dL is: " + str(dL))
 		data[i] = remap(data[i][0], data[i][dL],timeRange[int(i/2)][0],timeRange[int(i/2)][1],data[i])
 
 	for q in range(1,len(data)-2,2):
-		#print("q is: " + str(q))
-		#print("length data[q] is: " +str(len(data[q])))		# remap y values
+		##print("q is: " + str(q))
+		##print("length data[q] is: " +str(len(data[q])))		# remap y values
 		data[q] = remap(minY, maxY,0,1,data[q])
-		#print(data[i])
-		print("this is the minimum after remapping: " +str(min(data[q])))
-		print("this is the maximum after remapping: " +str(max(data[q])))	
+		##print(data[i])
+		#print("this is the minimum after remapping: " +str(min(data[q])))
+		#print("this is the maximum after remapping: " +str(max(data[q])))	
 
 	return data
 
@@ -392,7 +393,7 @@ def setXYRange(groupFile, type):
 
 	for s in subjects:
 		cInd = subjects.index(s)
-		print("we are at subject " + s)
+		#print("we are at subject " + s)
 
 		tagPath = "./"+s+"/"+"E4"+"/"+"tags.csv"
 		tagData = openReadFile(tagPath)
@@ -416,7 +417,7 @@ def setXYRange(groupFile, type):
 			#scale x and y axis
 			scaleData = rescaleData(updateData,type)
 			#scaleData = data
-			#print(scaleData)
+			##print(scaleData)
 
 			concatX = []
 			concatY = []
@@ -424,16 +425,17 @@ def setXYRange(groupFile, type):
 			for i in range(0,len(scaleData)-2,2):
 				concatX += scaleData[i]
 				concatY += scaleData[i+1]
-				#print(scaleData[i+1])
+				##print(scaleData[i+1])
 			
-			#print(concatY)
+			##print(concatY)
 			masterX.append(concatX)
 			masterY.append(concatY)
-		else:
-			print("Instance of bad data.")
-
+		#else:
+			#print("Instance of bad data.")
 
 	return masterX, masterY
+
+
 
 def plotMultiGraph(groupFile, type, group):
 	"""
@@ -504,6 +506,169 @@ def plotMultiGraph(groupFile, type, group):
 		plt.clf() #clear figure for next group.
 
 	return
+
+
+
+def calcStats(groupFile, type, group):
+	"""
+	Shapiro Wilks test to get p-value
+	Welch Test/T-test for trends
+
+	groupFile = array of filepaths to participant lists
+	type = type of data to be visualized ("EDA", "HR", "ACC")
+	group = array of group names ["Control", "Slow", "Fast"]
+	"""
+	import scipy.stats
+
+	allDiff = []
+
+	for g in range(len(groupFile)):
+		#group[g] #control, fast, or slow
+
+		subjects = openReadFile(groupFile[g])
+		arrAvgDiff = getAverageChange(subjects)
+		allDiff.append(arrAvgDiff)
+		#print(arrAvgDiff)
+		print("Shapiro‐Wilks p‐value ", group[g], scipy.stats.shapiro(arrAvgDiff)[1])
+
+	##print(allDiff[0])
+	##print(allDiff[1])
+	##print(allDiff[2])
+
+	CS = scipy.stats.ttest_ind(allDiff[0],allDiff[1],equal_var=True)
+	CF = scipy.stats.ttest_ind(allDiff[0],allDiff[2],equal_var=True)
+	SF = scipy.stats.ttest_ind(allDiff[1],allDiff[2],equal_var=True)
+	
+	# print("T-test ", "C-S", scipy.stats.ttest_ind(allDiff[0],allDiff[1],equal_var=True)[1])
+	# print("T-test ", "C-F", scipy.stats.ttest_ind(allDiff[0],allDiff[2],equal_var=True)[1])
+	# print("T-test ", "S-F", scipy.stats.ttest_ind(allDiff[1],allDiff[2],equal_var=True)[1])
+	print("T-test", "C-S", "t = " + str(CS[0]), "p = " + str(CS[1]))
+	print("T-test", "C-F", "t = " + str(CF[0]), "p = " + str(CF[1]))
+	print("T-test", "S-F", "t = " + str(SF[0]), "p = " + str(SF[1]))
+	
+	# print("T-test ", "C-S", scipy.stats.ttest_ind(allDiff[0],allDiff[1],equal_var=True)[1])
+	# print("T-test ", "C-F", scipy.stats.ttest_ind(allDiff[0],allDiff[2],equal_var=True)[1])
+	# print("T-test ", "S-F", scipy.stats.ttest_ind(allDiff[1],allDiff[2],equal_var=True)[1])
+
+
+	return
+
+
+
+
+def getAverageChange(dir, subjects):
+	"""
+	Grabs data per subject.
+	Cleans Data.
+	Normalizes data between 0 and 1 to eliminate personal ranges.
+	Rescales data to correct X axis.
+	Calculates average difference between relaxed and stressed conditions.
+	Returns an array of average differences.
+	"""
+
+	newSubjects = []
+	avgDifference =[]
+
+	for s in range(len(subjects)):
+		newSubjects.append(subjects[s])
+	print("newsubj: ", newSubjects)
+
+	for p in newSubjects:
+		print(p)
+		# p=str(int(p)+100)
+		print(p)
+		tagPath = dir+p+"/"+"E4"+"/"+"tags.csv"
+		print("tagpath", tagPath)
+		tagData = openReadFile(tagPath)
+		bpRaw = openReadBPFile(dir,p,"biopatch")
+	
+		#clean by confidence
+		'''
+		if (type == "HR"):
+			cleanConf = cleanConfidence(bpRaw[0], bpRaw[1], bpRaw[2])
+			yLabel="ΔHR (bpm)"
+		elif (type == "BR"):
+			cleanConf = cleanConfidence(bpRaw[0], bpRaw[3], bpRaw[4])
+			yLabel="ΔBR (bpm)"
+		'''
+		cleanConf = cleanConfidence(bpRaw[0], bpRaw[3], bpRaw[4])
+
+		data = separateData(cleanConf,tagData)
+
+		if (data != "SKIPPED"):
+			cleanData = cleanSessions(data)
+			updateData = getMinMax(cleanData)
+			scaleData = rescaleData(updateData,type)
+
+			rAvg = getAverage(scaleData[1]) #check separateData for order
+			sAvg = getAverage(scaleData[9]) #check separateData for order
+			diff =sAvg-rAvg
+			avgDifference.append(diff)
+	print(avgDifference)
+	return avgDifference #returns array of differences in BR
+
+
+"""
+Plots histogram of average change in BR from relaxed to stressed conditions.
+"""
+def plotHistogram(dir, groupFile, type, group):
+	for g in range(len(groupFile)):
+
+		"""
+		Set some plot style stuff -----------------------------------------------------
+		"""
+		#get rid of border around graphs
+		fig, ax = plt.subplots()
+		ax.spines['top'].set_visible(False)
+		ax.spines['right'].set_visible(False)
+
+		#colors control, fast, slow
+		if (group[g] == "Control"):
+			barcolor = "#6AC8C7"
+		elif (group[g] == "Fast"):
+			barcolor = "#F1C62F"
+		elif (group[g] == "Slow"):
+			barcolor= "#FF8F4B"
+		elif(group[g] == "HR" or group == "BR"):
+			barcolor = ["#6AC8C7","#FF8F4B","#F1C62F"]
+
+		"""
+		Get the data--------------------------------------------------------------------
+		"""
+		print("groupfile: ", groupFile[g])
+		subjects = openReadFile(groupFile[g])
+
+		for s in range(len(subjects)):
+			subjects[s]=subjects[s][0]
+		avgDifference = getAverageChange(dir,subjects)
+		
+		"""
+		Plot histogram--------------------------------------------------------------------
+		"""
+		# print(avgDifference)
+		num_bins = [0,0.05,0.1,0.15,0.2,0.25,0.3,0.35,0.4]
+		# the histogram of the data
+		n, bins, patches = plt.hist(avgDifference, bins=num_bins, normed=1, facecolor=barcolor, alpha=0.9, zorder=5)
+
+		"""
+		Labels and stuff--------------------------------------------------------------
+		"""
+		plt.ylim(0,14)
+		for y in range(0,15,1):
+			plt.axhline(y, color = "80", linewidth = "0.25", linestyle="-", zorder = 1)
+
+		
+		# if ("EDA" in type):
+		plt.title("Histogram of Change in BR from Stressed to Relaxed Conditions \n\n" + group[g] + " Group")
+
+
+		fig = matplotlib.pyplot.gcf()
+		fig.savefig("./"+"BR_Histogram_"+type+"_"+group[g]+".png", dpi = 300)
+		plt.clf() # clear plot for next group.
+	return
+	return
+
+
 
 
 def plotBarChart(groupFile, type, group):
@@ -729,16 +894,21 @@ def singleBarChart(groupFile, type, group):
 Run stuff down here
 """
 
-allGroups = ["./BR-Sample.csv"]
-allGroups2 = ["./HR-Sample.csv"]
-groupNames = ["All"]
+#allGroups = ["./BR-Sample.csv"]
+#allGroups2 = ["./HR-Sample.csv"]
+#groupNames = ["All"]
+directory = "../../Dropbox (MIT)/MAS.630/"
 
-#allGroups = ["./PARTICIPANT LIST - Control.csv", "./PARTICIPANT LIST - Slow.csv", "./PARTICIPANT LIST - Fast.csv"] 
-#groupNames = ["Control", "Slow", "Fast"]
 
-plotMultiGraph(allGroups2,"HR", groupNames)
+allGroups = [directory+"PARTICIPANT LIST - Control.csv", directory+"PARTICIPANT LIST - Slow.csv", directory+"PARTICIPANT LIST - Fast.csv"] 
+groupNames = ["Control", "Slow", "Fast"]
+
+#plotMultiGraph(allGroups2,"HR", groupNames)
 #plotBarChart(allGroups,"HR", groupNames)
 #singleBarChart(allGroups,"HR", groupNames)
-plotMultiGraph(allGroups,"BR", groupNames)
+#plotMultiGraph(allGroups,"BR", groupNames)
 #plotBarChart(allGroups,"BR", groupNames)
 #singleBarChart(allGroups,"BR", groupNames)
+
+# calcStats(allGroups,"BR",groupNames)
+plotHistogram(directory,allGroups,"BR",groupNames)
