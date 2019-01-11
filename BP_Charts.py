@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import math
 from datetime import datetime
 import pytz
+import scipy.stats
 
 
 def convertToUTC(TS):
@@ -509,53 +510,6 @@ def plotMultiGraph(groupFile, type, group):
 
 
 
-def calcStats(groupFile, type, group):
-	"""
-	Shapiro Wilks test to get p-value
-	Welch Test/T-test for trends
-
-	groupFile = array of filepaths to participant lists
-	type = type of data to be visualized ("EDA", "HR", "ACC")
-	group = array of group names ["Control", "Slow", "Fast"]
-	"""
-	import scipy.stats
-
-	allDiff = []
-
-	for g in range(len(groupFile)):
-		#group[g] #control, fast, or slow
-
-		subjects = openReadFile(groupFile[g])
-		arrAvgDiff = getAverageChange(subjects)
-		allDiff.append(arrAvgDiff)
-		#print(arrAvgDiff)
-		print("Shapiro‐Wilks p‐value ", group[g], scipy.stats.shapiro(arrAvgDiff)[1])
-
-	##print(allDiff[0])
-	##print(allDiff[1])
-	##print(allDiff[2])
-
-	CS = scipy.stats.ttest_ind(allDiff[0],allDiff[1],equal_var=True)
-	CF = scipy.stats.ttest_ind(allDiff[0],allDiff[2],equal_var=True)
-	SF = scipy.stats.ttest_ind(allDiff[1],allDiff[2],equal_var=True)
-	
-	# print("T-test ", "C-S", scipy.stats.ttest_ind(allDiff[0],allDiff[1],equal_var=True)[1])
-	# print("T-test ", "C-F", scipy.stats.ttest_ind(allDiff[0],allDiff[2],equal_var=True)[1])
-	# print("T-test ", "S-F", scipy.stats.ttest_ind(allDiff[1],allDiff[2],equal_var=True)[1])
-	print("T-test", "C-S", "t = " + str(CS[0]), "p = " + str(CS[1]))
-	print("T-test", "C-F", "t = " + str(CF[0]), "p = " + str(CF[1]))
-	print("T-test", "S-F", "t = " + str(SF[0]), "p = " + str(SF[1]))
-	
-	# print("T-test ", "C-S", scipy.stats.ttest_ind(allDiff[0],allDiff[1],equal_var=True)[1])
-	# print("T-test ", "C-F", scipy.stats.ttest_ind(allDiff[0],allDiff[2],equal_var=True)[1])
-	# print("T-test ", "S-F", scipy.stats.ttest_ind(allDiff[1],allDiff[2],equal_var=True)[1])
-
-
-	return
-
-
-
-
 def getAverageChange(dir, subjects):
 	"""
 	Grabs data per subject.
@@ -570,7 +524,7 @@ def getAverageChange(dir, subjects):
 	avgDifference =[]
 
 	for s in range(len(subjects)):
-		newSubjects.append(subjects[s])
+		newSubjects.append(subjects[s][0])
 	print("newsubj: ", newSubjects)
 
 	for p in newSubjects:
@@ -604,7 +558,7 @@ def getAverageChange(dir, subjects):
 			sAvg = getAverage(scaleData[9]) #check separateData for order
 			diff =sAvg-rAvg
 			avgDifference.append(diff)
-	print(avgDifference)
+	# print(avgDifference)
 	return avgDifference #returns array of differences in BR
 
 
@@ -638,8 +592,6 @@ def plotHistogram(dir, groupFile, type, group):
 		print("groupfile: ", groupFile[g])
 		subjects = openReadFile(groupFile[g])
 
-		for s in range(len(subjects)):
-			subjects[s]=subjects[s][0]
 		avgDifference = getAverageChange(dir,subjects)
 		
 		"""
@@ -887,6 +839,87 @@ def singleBarChart(groupFile, type, group):
 
 
 
+def calcShapiroWilks(groupFile, type, group, dir):
+	"""
+	Shapiro Wilks test to get p-value
+	Welch Test/T-test for trends
+
+	groupFile = array of filepaths to participant lists
+	type = type of data to be visualized ("EDA", "HR", "ACC")
+	group = array of group names ["Control", "Slow", "Fast"]
+	"""
+
+	allDiff = []
+
+	for g in range(len(groupFile)):
+		#group[g] #control, fast, or slow
+
+		subjects = openReadFile(groupFile[g])
+		arrAvgDiff = getAverageChange(dir,subjects)
+		allDiff.append(arrAvgDiff)
+		#print(arrAvgDiff)
+		print("Shapiro‐Wilks p‐value ", group[g], scipy.stats.shapiro(arrAvgDiff)[1])
+
+
+	CS = scipy.stats.ttest_ind(allDiff[0],allDiff[1],equal_var=True)
+	CF = scipy.stats.ttest_ind(allDiff[0],allDiff[2],equal_var=True)
+	SF = scipy.stats.ttest_ind(allDiff[1],allDiff[2],equal_var=True)
+	
+	print("T-test", "C-S", "t = " + str(CS[0]), "p = " + str(CS[1]))
+	print("T-test", "C-F", "t = " + str(CF[0]), "p = " + str(CF[1]))
+	print("T-test", "S-F", "t = " + str(SF[0]), "p = " + str(SF[1]))
+
+	return
+
+"""
+Calculates Kruskal Wallis test
+For non-normalized data (*sigh* ours)
+Used when ANOVA assumptions not met, needs at least 5 data points.
+"""
+def calcKruskalWallis(groupFile, type, group, dir):
+	allDiff=[]
+
+	for g in range(len(groupFile)):
+		subjects=openReadFile(groupFile[g])
+		arrayAverageDiff = getAverageChange(dir, subjects)
+		allDiff.append(arrayAverageDiff)
+
+	# 0 - control, 1 - slow, 2 - fast
+	CS = scipy.stats.kruskal(allDiff[0],allDiff[1])
+	print("C-S: ", CS)
+	CF = scipy.stats.kruskal(allDiff[0],allDiff[2])
+	print("C-F: ", CF)
+	SF = scipy.stats.kruskal(allDiff[1],allDiff[2])
+	print("S-F: ", SF)
+
+	return
+
+
+
+"""
+Performs ANOVA test
+Assumes independent groups
+data from normal distribution
+Equal standards of deviation
+"""
+def calcANOVA(groupFile, type, group, dir):
+	allDiff=[]
+
+	for g in range(len(groupFile)):
+		subjects=openReadFile(groupFile[g])
+		arrayAverageDiff = getAverageChange(dir, subjects)
+		allDiff.append(arrayAverageDiff)
+
+	# 0 - control, 1 - slow, 2 - fast
+	CS = scipy.stats.f_oneway(allDiff[0],allDiff[1])
+	print("C-S: ", CS)
+	CF = scipy.stats.f_oneway(allDiff[0],allDiff[2])
+	print("C-F: ", CF)
+	SF = scipy.stats.f_oneway(allDiff[1],allDiff[2])
+	print("S-F: ", SF)
+
+	return
+
 
 
 """
@@ -911,4 +944,8 @@ groupNames = ["Control", "Slow", "Fast"]
 #singleBarChart(allGroups,"BR", groupNames)
 
 # calcStats(allGroups,"BR",groupNames)
-plotHistogram(directory,allGroups,"BR",groupNames)
+# plotHistogram(directory,allGroups,"BR",groupNames)
+# calcKruskalWallis(allGroups, "BR", groupNames, directory)
+calcANOVA(allGroups, "BR", groupNames, directory)
+
+
